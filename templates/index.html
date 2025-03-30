@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block title %}Dobble Card Generator - Create Your Own Cards{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-card-image"></i> Create Dobble Cards</h5>
+            </div>
+            <div class="card-body">
+                <form id="generateForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">1. Choose Your Icons</h5>
+
+                            <!-- Default Icon Sets -->
+                            <div class="mb-4">
+                                <h6>Default Icon Sets</h6>
+                                <div class="row">
+                                    {% for icon_set in icon_sets %}
+                                        <div class="col-6 col-md-4 col-lg-3 mb-3">
+                                            <div class="card icon-set-card" data-icon-set="{{ icon_set.id }}">
+                                                <img src="{{ icon_set.sample_icon }}" class="card-img-top" alt="{{ icon_set.name }}">
+                                                <span class="icon-count-badge">{{ icon_set.count }}</span>
+                                                <div class="card-body p-2 text-center">
+                                                    <h6 class="card-title mb-0">{{ icon_set.name }}</h6>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- User Icon Sets -->
+                            {% if user_icon_sets %}
+                                <div class="mb-4">
+                                    <h6>Your Icon Sets</h6>
+                                    <div class="row">
+                                        {% for icon_set in user_icon_sets %}
+                                            <div class="col-6 col-md-4 col-lg-3 mb-3">
+                                                <div class="card icon-set-card" data-icon-set="{{ icon_set.id }}">
+                                                    <img src="{{ icon_set.sample_icon }}" class="card-img-top" alt="{{ icon_set.name }}">
+                                                    <span class="icon-count-badge">{{ icon_set.count }}</span>
+                                                    <div class="card-body p-2 text-center">
+                                                        <h6 class="card-title mb-0">{{ icon_set.name }}</h6>
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-danger delete-icon-set" data-icon-set="{{ icon_set.id }}">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <!-- Upload Your Own -->
+                            <div class="mb-4">
+                                <h6>Upload Your Own Icons</h6>
+                                <div class="dropzone" id="iconDropzone">
+                                    <i class="bi bi-cloud-upload" style="font-size: 2rem;"></i>
+                                    <p class="mb-0">Drag & drop icons here or click to select</p>
+                                    <small class="text-muted d-block mt-2">Supported formats: PNG, JPG, GIF, SVG</small>
+                                    <input type="file" id="iconUpload" multiple accept=".png,.jpg,.jpeg,.gif,.svg" style="display: none;">
+                                </div>
+                                <div class="mt-2" id="uploadForm" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="setName" placeholder="Icon Set Name">
+                                        <button type="button" class="btn btn-primary" id="uploadButton">
+                                            <i class="bi bi-upload"></i> Upload
+                                        </button>
+                                    </div>
+                                    <div id="filesList" class="mt-2 small"></div>
+                                </div>
+                            </div>
+
+                            <input type="hidden" id="selectedIconSet" name="icon_set" value="">
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5 class="mb-3">2. Configure Your Cards</h5>
+
+                            <div class="mb-3">
+                                <label for="symbolsPerCard" class="form-label">Symbols Per Card</label>
+                                <select class="form-select" id="symbolsPerCard" name="symbols_per_card">
+                                    <option value="0">Auto (based on available icons)</option>
+                                    <option value="3">3 symbols</option>
+                                    <option value="4">4 symbols</option>
+                                    <option value="5">5 symbols</option>
+                                    <option value="6">6 symbols</option>
+                                    <option value="7">7 symbols</option>
+                                    <option value="8" selected>8 symbols (standard)</option>
+                                </select>
+                                <div class="form-text">Standard Dobble/Spot It has 8 symbols per card.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="numCards" class="form-label">Number of Cards</label>
+                                <select class="form-select" id="numCards" name="n_cards">
+                                    <option value="0" selected>Maximum possible</option>
+                                    <option value="8">8 cards</option>
+                                    <option value="16">16 cards</option>
+                                    <option value="24">24 cards</option>
+                                    <option value="32">32 cards</option>
+                                    <option value="48">48 cards</option>
+                                    <option value="57">57 cards (standard)</option>
+                                </select>
+                                <div class="form-text">Standard Dobble/Spot It has 55-57 cards.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="cardSize" class="form-label">Card Size</label>
+                                <select class="form-select" id="cardSize" name="card_size">
+                                    <option value="A4" selected>A4</option>
+                                    <option value="A5">A5</option>
+                                    <option value="A6">A6</option>
+                                    <option value="LETTER">Letter</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="layout" class="form-label">Symbol Layout</label>
+                                <select class="form-select" id="layout" name="layout">
+                                    <option value="circle" selected>Circular layout</option>
+                                    <option value="grid">Grid layout</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="downloadFormat" class="form-label">Download Format</label>
+                                <select class="form-select" id="downloadFormat" name="format">
+                                    <option value="pdf" selected>PDF (all cards)</option>
+                                    <option value="png">PNG (individual cards)</option>
+                                    <option value="both">Both PDF and PNG</option>
+                                </select>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg" id="generateButton" disabled>
+                                    <i class="bi bi-gear"></i> Generate Cards
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recent_exports %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Exports</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Details</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for export in recent_exports %}
+                            <tr>
+                                <td>{{ export.created_at }}</td>
+                                <td>{{ export.n_cards }} cards with {{ export.symbols_per_card }} symbols each</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        {% if export.pdf_exists %}
+                                        <a href="/exports/{{ export.pdf_path }}" class="btn btn-sm btn-outline-danger" target="_blank">
+                                            <i class="bi bi-file-pdf"></i> PDF
+                                        </a>
+                                        {% endif %}
+                                        <a href="{{ export.preview_url }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Preview
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger delete-export" data-job-id="{{ export.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Icon Set Confirmation Modal -->
+<div class="modal fade" id="deleteIconSetModal" tabindex="-1" aria-labelledby="deleteIconSetModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteIconSetModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this icon set?</p>
+                <p class="text-danger">This action cannot be undone. All icon files will be permanently deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteIconSetBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Export Confirmation Modal -->
+<div class="modal fade" id="deleteExportModal" tabindex="-1" aria-labelledby="deleteExportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteExportModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this export?</p>
+                <p class="text-danger">This action cannot be undone. All generated files will be permanently deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteExportBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Icon set selection
+        const iconSetCards = document.querySelectorAll('.icon-set-card');
+        const selectedIconSetInput = document.getElementById('selectedIconSet');
+        const generateButton = document.getElementById('generateButton');
+
+        iconSetCards.forEach(card => {
+            card.addEventListener('click', function() {
+                // Remove selected class from all cards
+                iconSetCards.forEach(c => c.classList.remove('selected'));
+
+                // Add selected class to this card
+                this.classList.add('selected');
+
+                // Update hidden input
+                selectedIconSetInput.value = this.dataset.iconSet;
+
+                // Enable generate button
+                generateButton.disabled = false;
+            });
+        });
+
+        // Icon upload dropzone
+        const dropzone = document.getElementById('iconDropzone');
+        const iconUpload = document.getElementById('iconUpload');
+        const uploadForm = document.getElementById('uploadForm');
+        const filesList = document.getElementById('filesList');
+        const setNameInput = document.getElementById('setName');
+        const uploadButton = document.getElementById('uploadButton');
+
+        if (dropzone) {
+            dropzone.addEventListener('click', function() {
+                iconUpload.click();
+            });
+
+            dropzone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+
+            dropzone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+
+            dropzone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFiles(files);
+                }
+            });
+        }
+
+        if (iconUpload) {
+            iconUpload.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    handleFiles(this.files);
+                }
+            });
+        }
+
+        function handleFiles(files) {
+            // Show upload form
+            if (uploadForm) uploadForm.style.display = 'block';
+
+            // Clear files list
+            if (filesList) filesList.innerHTML = '';
+
+            // List files
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileItem = document.createElement('div');
+                fileItem.className = 'd-flex align-items-center mb-1';
+                fileItem.innerHTML = `
+                    <i class="bi bi-file-earmark-image me-1"></i>
+                    <span>${file.name}</span>
+                    <span class="ms-1 text-muted">(${formatFileSize(file.size)})</span>
+                `;
+                if (filesList) filesList.appendChild(fileItem);
+            }
+
+            // Suggest a set name based on first file
+            if (setNameInput && !setNameInput.value && files.length > 0) {
+                const firstName = files[0].name.split('.')[0];
+                setNameInput.value = firstName.replace(/[_-]/g, ' ');
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            else return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        // Upload button
+        if (uploadButton) {
+            uploadButton.addEventListener('click', function() {
+                // Validate set name
+                if (!setNameInput.value.trim()) {
+                    alert('Please enter a name for your icon set');
+                    return;
+                }
+
+                // Check if files are selected
+                if (iconUpload.files.length === 0) {
+                    alert('Please select at least one icon file');
+                    return;
+                }
+
+                // Show processing modal
+                window.showProcessing('Uploading icons...');
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('set_name', setNameInput.value.trim());
+
+                // Add all files
+                for (let i = 0; i < iconUpload.files.length; i++) {
+                    formData.append('icons', iconUpload.files[i]);
+                }
+
+                // Upload files
+                fetch('/api/upload_icons', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    window.hideProcessing();
+
+                    if (data.success) {
+                        // Reload page to show new icon set
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    window.hideProcessing();
+                    console.error('Error:', error);
+                    alert('Error uploading icons. Please try again.');
+                });
+            });
+        }
+
+        // Generate form submission
+        const generateForm = document.getElementById('generateForm');
+
+        if (generateForm) {
+            generateForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Validate icon set selection
+                if (!selectedIconSetInput.value) {
+                    alert('Please select an icon set');
+                    return;
+                }
+
+                // Show processing modal
+                window.showProcessing('Generating cards... This may take a while.');
+
+                // Create form data
+                const formData = new FormData(generateForm);
+
+                // Submit form
+                fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    window.hideProcessing();
+
+                    if (data.success) {
+                        // Redirect to preview
+                        window.location.href = data.preview_url;
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    window.hideProcessing();
+                    console.error('Error:', error);
+                    alert('Error generating cards. Please try again.');
+                });
+            });
+        }
+
+        // Delete icon set
+        const deleteIconSetBtns = document.querySelectorAll('.delete-icon-set');
+        const deleteIconSetModal = document.getElementById('deleteIconSetModal') ?
+            new bootstrap.Modal(document.getElementById('deleteIconSetModal')) : null;
+        const confirmDeleteIconSetBtn = document.getElementById('confirmDeleteIconSetBtn');
+        let currentIconSetToDelete = null;
+
+        deleteIconSetBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent card selection
+                currentIconSetToDelete = this.dataset.iconSet;
+                if (deleteIconSetModal) deleteIconSetModal.show();
+            });
+        });
+
+        if (confirmDeleteIconSetBtn) {
+            confirmDeleteIconSetBtn.addEventListener('click', function() {
+                if (!currentIconSetToDelete) return;
+
+                // Show processing modal
+                if (deleteIconSetModal) deleteIconSetModal.hide();
+                window.showProcessing('Deleting icon set...');
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('icon_set', currentIconSetToDelete);
+
+                // Delete icon set
+                fetch('/api/delete_icon_set', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    window.hideProcessing();
+
+                    if (data.success) {
+                        // Reload page
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    window.hideProcessing();
+                    console.error('Error:', error);
+                    alert('Error deleting icon set. Please try again.');
+                });
+            });
+        }
+
+        // Delete export
+        const deleteExportBtns = document.querySelectorAll('.delete-export');
+        const deleteExportModal = document.getElementById('deleteExportModal') ?
+            new bootstrap.Modal(document.getElementById('deleteExportModal')) : null;
+        const confirmDeleteExportBtn = document.getElementById('confirmDeleteExportBtn');
+        let currentExportToDelete = null;
+
+        deleteExportBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                currentExportToDelete = this.dataset.jobId;
+                if (deleteExportModal) deleteExportModal.show();
+            });
+        });
+
+        if (confirmDeleteExportBtn) {
+            confirmDeleteExportBtn.addEventListener('click', function() {
+                if (!currentExportToDelete) return;
+
+                // Show processing modal
+                if (deleteExportModal) deleteExportModal.hide();
+                window.showProcessing('Deleting export...');
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('job_id', currentExportToDelete);
+
+                // Delete export
+                fetch('/api/delete_export', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    window.hideProcessing();
+
+                    if (data.success) {
+                        // Reload page
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    window.hideProcessing();
+                    console.error('Error:', error);
+                    alert('Error deleting export. Please try again.');
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}
