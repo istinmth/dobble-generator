@@ -3,6 +3,7 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Install required system packages
+# Install required system packages
 RUN apt-get update && apt-get install -y \
     libcairo2-dev \
     pkg-config \
@@ -14,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     wget \
     curl \
+    libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage Docker cache
