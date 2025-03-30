@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>dobble-generator</Name>
+  <Repository>istinmth/dobble-generator:latest</Repository>
+  <Registry>https://hub.docker.com/r/istinmth/dobble-generator/</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/istinmth/dobble-generator/issues</Support>
+  <Project>https://github.com/istinmth/dobble-generator</Project>
+  <Overview>Dobble Card Generator - Create your own Dobble/Spot It cards with custom images or icons. Upload your own images or use the included icon sets to generate mathematically perfect Dobble cards where any two cards share exactly one matching symbol.</Overview>
+  <Category>Tools: Productivity</Category>
+  <WebUI>http://[IP]:[PORT:8920]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/istinmth/dobble-generator/main/docker-template.xml</TemplateURL>
+  <Icon>https://cdn-icons-png.flaticon.com/512/4696/4696624.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="WebUI Port" Target="8920" Default="8920" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">8920</Config>
+  <Config Name="Uploads Volume" Target="/app/uploads" Default="/mnt/user/appdata/dobble-generator/uploads" Mode="rw" Description="Where uploaded icons and generated cards are stored" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/dobble-generator/uploads</Config>
+  <Config Name="Logs Volume" Target="/app/logs" Default="/mnt/user/appdata/dobble-generator/logs" Mode="rw" Description="Where application logs are stored" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/dobble-generator/logs</Config>
+  <Config Name="Timezone" Target="TZ" Default="Europe/London" Mode="" Description="Timezone for the container" Type="Variable" Display="advanced" Required="false" Mask="false">Europe/London</Config>
+</Container>
