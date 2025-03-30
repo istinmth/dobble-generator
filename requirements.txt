@@ -6,6 +6,5 @@ reportlab==4.0.4
 gunicorn==23.0.0
 werkzeug==3.0.6
 pycairo==1.23.0
-cairo-gobject==0.1.0
 requests==2.32.0
 python-dateutil==2.8.2
