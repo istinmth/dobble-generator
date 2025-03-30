@@ -3,12 +3,13 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
       
       - name: Set up QEMU
@@ -29,4 +30,4 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
-          tags: yourusername/dobble-generator:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/dobble-generator:latest
