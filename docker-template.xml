@@ -12,7 +12,7 @@
   <Overview>Dobble Card Generator - Create your own Dobble/Spot It cards with custom images or icons. Upload your own images or use the included icon sets to generate mathematically perfect Dobble cards where any two cards share exactly one matching symbol.</Overview>
   <Category>Tools: Productivity</Category>
   <WebUI>http://[IP]:[PORT:8920]/</WebUI>
-  <TemplateURL>https://raw.githubusercontent.com/istinmth/dobble-generator/main/docker-template.xml</TemplateURL>
+  <TemplateURL>https://raw.githubusercontent.com/istinmth/dobble-generator/refs/heads/main/docker-template.xml</TemplateURL>
   <Icon>https://cdn-icons-png.flaticon.com/512/4696/4696624.png</Icon>
   <ExtraParams/>
   <PostArgs/>
