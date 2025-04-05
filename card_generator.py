@@ -10,6 +10,7 @@ import cairo
 from reportlab.lib.pagesizes import A4, A5, A6, LETTER
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+from PIL import Image, ImageDraw, ImageFont, ImageChops
 
 # Set up logging
 logger = logging.getLogger('dobble_generator')

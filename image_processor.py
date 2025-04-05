@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple, Optional
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance
 import requests
 import cairosvg
+from PIL import Image, ImageDraw, ImageFont, ImageChops
 
 # Set up logging
 logger = logging.getLogger('dobble_generator')
