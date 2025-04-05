@@ -74,7 +74,6 @@ def load_and_process_image(file_path: str) -> Optional[Image.Image]:
         logger.error(f"Error loading image {file_path}: {e}")
         return None
 
-
 def preprocess_image(img: Image.Image) -> Image.Image:
     """
     Preprocess an image for use in Dobble cards.
@@ -85,17 +84,30 @@ def preprocess_image(img: Image.Image) -> Image.Image:
     Returns:
         Processed PIL Image object
     """
-    # Resize to a standard size (maintaining aspect ratio)
-    img = resize_maintain_aspect(img, target_size=(400, 400))
-
-    # Remove extra transparent border
+    # First crop to remove transparent borders
     img = crop_transparent(img)
-
-    # Add some padding around the image
-    img = add_padding(img, padding_ratio=0.1)
-
+    
+    # Ensure RGBA mode
+    if img.mode != 'RGBA':
+        img = img.convert('RGBA')
+    
+    # Create a square image with the content centered
+    width, height = img.size
+    max_dim = max(width, height)
+    square_img = Image.new('RGBA', (max_dim, max_dim), (0, 0, 0, 0))
+    
+    # Paste the original image centered
+    paste_x = (max_dim - width) // 2
+    paste_y = (max_dim - height) // 2
+    square_img.paste(img, (paste_x, paste_y), img)
+    
+    # Resize to a standard size
+    img = square_img.resize((400, 400), Image.LANCZOS)
+    
+    # Add minimal padding
+    img = add_padding(img, padding_ratio=0.05)
+    
     return img
-
 
 def resize_maintain_aspect(img: Image.Image, target_size: Tuple[int, int]) -> Image.Image:
     """
