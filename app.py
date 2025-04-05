@@ -98,7 +98,7 @@ def generate_cards():
         symbols_per_card = int(request.form.get('symbols_per_card', 0))  # 0 means auto-calculate
         icon_set = request.form.get('icon_set', '')
         card_size = request.form.get('card_size', 'A4')  # A4, A5, etc.
-        layout = request.form.get('layout', 'circle')  # circle, grid
+        layout = request.form.get('layout', 'smart')
         download_format = request.form.get('format', 'pdf')  # pdf, png, both
 
         # Check if icon set is specified

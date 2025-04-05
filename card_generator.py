@@ -114,6 +114,7 @@ def generate_circular_layout(n_symbols: int) -> List[Tuple[float, float, float]]
     return layout
 
 def generate_grid_layout(n_symbols: int) -> List[Tuple[float, float, float]]:
+
     """
     Generate a grid layout for the given number of symbols.
     Returns a list of (x_offset, y_offset, scale) tuples.
@@ -139,27 +140,176 @@ def generate_grid_layout(n_symbols: int) -> List[Tuple[float, float, float]]:
 
     return layout
 
+def generate_smart_layout(n_symbols: int) -> List[Tuple[float, float, float]]:
+    """
+    Generate an optimized symbol layout that maximizes space usage.
+    
+    Uses a force-directed placement algorithm to position symbols efficiently.
+    
+    Args:
+        n_symbols: Number of symbols to place
+        
+    Returns:
+        List of (x_offset, y_offset, scale) tuples
+    """
+    import random
+    import math
+    
+    # Size constraints
+    min_scale = 0.15
+    max_scale = 0.45
+    
+    # Determine base scale based on number of symbols
+    if n_symbols <= 3:
+        base_scale = 0.35
+    elif n_symbols <= 5:
+        base_scale = 0.30
+    elif n_symbols <= 8:
+        base_scale = 0.25
+    else:
+        base_scale = 0.20
+    
+    # Initialize positions with a simple approach
+    positions = []
+    
+    # First place a center symbol if we have more than 3 symbols
+    if n_symbols > 3:
+        positions.append([0.5, 0.5, base_scale])
+        remaining = n_symbols - 1
+    else:
+        remaining = n_symbols
+    
+    # Place remaining symbols in a circle
+    radius = 0.35  # Distance from center as fraction of diameter
+    for i in range(remaining):
+        angle = 2 * math.pi * i / remaining
+        x = 0.5 + radius * math.cos(angle)
+        y = 0.5 + radius * math.sin(angle)
+        scale = base_scale * 0.8  # Slightly smaller than center symbol
+        positions.append([x, y, scale])
+    
+    # Now refine the placement with force-directed algorithm
+    # Parameters
+    iterations = 100
+    repulsion = 0.01  # Symbol-to-symbol repulsion strength
+    boundary = 0.02   # Boundary repulsion strength
+    min_distance = 0.1  # Minimum preferred distance between symbols
+    
+    # Run optimization
+    for _ in range(iterations):
+        for i in range(len(positions)):
+            force_x, force_y = 0, 0
+            
+            # Forces between symbols (repulsion)
+            for j in range(len(positions)):
+                if i == j:
+                    continue
+                
+                # Get positions and sizes
+                x1, y1, scale1 = positions[i]
+                x2, y2, scale2 = positions[j]
+                
+                # Calculate distance
+                dx = x1 - x2
+                dy = y1 - y2
+                distance = max(0.001, math.sqrt(dx*dx + dy*dy))
+                
+                # Calculate required distance based on symbol sizes
+                required_distance = (scale1 + scale2) * 0.6
+                
+                # Apply force if too close
+                if distance < required_distance:
+                    force = repulsion * (required_distance - distance) / distance
+                    force_x += dx * force
+                    force_y += dy * force
+            
+            # Boundary force (keep symbols inside card)
+            x, y, scale = positions[i]
+            
+            # Distance from edge
+            edge_dist_left = x - scale*0.6
+            edge_dist_right = 1.0 - x - scale*0.6
+            edge_dist_top = y - scale*0.6
+            edge_dist_bottom = 1.0 - y - scale*0.6
+            
+            # Apply inward force if too close to edge
+            if edge_dist_left < 0.05:
+                force_x += boundary * (0.05 - edge_dist_left) / max(0.001, edge_dist_left)
+            if edge_dist_right < 0.05:
+                force_x -= boundary * (0.05 - edge_dist_right) / max(0.001, edge_dist_right)
+            if edge_dist_top < 0.05:
+                force_y += boundary * (0.05 - edge_dist_top) / max(0.001, edge_dist_top)
+            if edge_dist_bottom < 0.05:
+                force_y -= boundary * (0.05 - edge_dist_bottom) / max(0.001, edge_dist_bottom)
+            
+            # Update position
+            positions[i][0] += force_x
+            positions[i][1] += force_y
+            
+            # Ensure positions stay within bounds
+            positions[i][0] = max(positions[i][2]*0.6, min(1.0 - positions[i][2]*0.6, positions[i][0]))
+            positions[i][1] = max(positions[i][2]*0.6, min(1.0 - positions[i][2]*0.6, positions[i][1]))
+    
+    # Optimize scaling - try to expand symbols to fill the card better
+    can_expand = True
+    expansion_iterations = 10
+    
+    while can_expand and expansion_iterations > 0:
+        expansion_iterations -= 1
+        can_expand = False
+        
+        # Try to expand each symbol slightly
+        for i in range(len(positions)):
+            old_scale = positions[i][2]
+            
+            # Don't exceed maximum scale
+            if old_scale >= max_scale:
+                continue
+                
+            # Try a slightly larger scale
+            new_scale = min(max_scale, old_scale * 1.05)
+            positions[i][2] = new_scale
+            
+            # Check for overlaps
+            has_overlap = False
+            for j in range(len(positions)):
+                if i == j:
+                    continue
+                    
+                x1, y1, scale1 = positions[i]
+                x2, y2, scale2 = positions[j]
+                
+                distance = math.sqrt((x1-x2)**2 + (y1-y2)**2)
+                min_req_distance = (scale1 + scale2) * 0.6
+                
+                if distance < min_req_distance:
+                    has_overlap = True
+                    break
+            
+            # Also check if it goes outside boundary
+            x, y, scale = positions[i]
+            if (x - scale*0.6 < 0.02 or x + scale*0.6 > 0.98 or 
+                y - scale*0.6 < 0.02 or y + scale*0.6 > 0.98):
+                has_overlap = True
+            
+            # If overlap, revert to old scale
+            if has_overlap:
+                positions[i][2] = old_scale
+            else:
+                can_expand = True  # We were able to expand something
+    
+    # Convert to tuples for final result
+    return [(p[0], p[1], p[2]) for p in positions]
+
 def create_circular_card(symbols: List[int],
                          images: Dict[int, Image.Image],
                          size: Tuple[int, int] = (800, 800),
                          background_color: Tuple[int, int, int] = (255, 255, 255),
                          border_color: Tuple[int, int, int] = (0, 0, 0),
                          border_width: int = 10,
-                         layout: str = 'circle') -> Image.Image:
+                         layout: str = 'smart') -> Image.Image:
     """
     Create a circular Dobble card with the given symbols and images.
-
-    Args:
-        symbols: List of symbol IDs to place on the card
-        images: Dictionary mapping symbol IDs to PIL Image objects
-        size: Size of the card in pixels (width, height)
-        background_color: Background color as RGB tuple
-        border_color: Border color as RGB tuple
-        border_width: Width of the border in pixels
-        layout: Layout type ('circle' or 'grid')
-
-    Returns:
-        PIL Image of the rendered card
     """
     # Create a blank card with the given background color
     card = Image.new('RGBA', size, background_color)
@@ -188,19 +338,20 @@ def create_circular_card(symbols: List[int],
     )
 
     # Select the appropriate layout
-    if layout == 'grid':
+    if layout == 'smart':
+        positions = generate_smart_layout(len(symbols))
+    elif layout == 'grid':
         positions = generate_grid_layout(len(symbols))
     else:  # 'circle' is the default
         positions = generate_circular_layout(len(symbols))
 
-    # Randomize the position of each symbol (within its assigned zone)
+    # Randomize rotation for each symbol
     positions_randomized = []
     for x, y, scale in positions:
-        # Reduce jitter to keep symbols more centered in their zones
-        x_jitter = random.uniform(-0.03, 0.03)
-        y_jitter = random.uniform(-0.03, 0.03)
-        # Add some random rotation
-        rotation = random.uniform(-20, 20)
+        # Add random rotation, but more controlled jitter to preserve layout
+        x_jitter = random.uniform(-0.02, 0.02)
+        y_jitter = random.uniform(-0.02, 0.02)
+        rotation = random.uniform(-25, 25)
         positions_randomized.append((x + x_jitter, y + y_jitter, scale, rotation))
 
     # Place each symbol on the card
@@ -249,7 +400,6 @@ def create_circular_card(symbols: List[int],
         card = Image.alpha_composite(card, temp)
 
     return card
-
 
 def create_square_card(symbols: List[int],
                        images: Dict[int, Image.Image],
@@ -338,7 +488,6 @@ def create_square_card(symbols: List[int],
 
     return card
 
-
 def create_cards_pdf(job_id: str,
                    cards: List[List[int]],
                    images: Dict[int, Image.Image],
@@ -349,19 +498,6 @@ def create_cards_pdf(job_id: str,
                    cards_per_page: int = 4) -> str:
     """
     Create a PDF with multiple Dobble cards, optimized for A4 with 4 cards per page.
-
-    Args:
-        job_id: Unique ID for the job
-        cards: List of cards, where each card is a list of symbol IDs
-        images: Dictionary mapping symbol IDs to PIL Image objects
-        output_dir: Directory where the PDF should be saved
-        card_shape: Shape of the cards ('circle' or 'square')
-        card_size: Size of the cards (e.g., 'A4', 'A5')
-        layout: Layout of symbols on the cards ('circle' or 'grid')
-        cards_per_page: Number of cards to place on each page (1, 2, 4, or 9)
-
-    Returns:
-        Path to the generated PDF file
     """
     # Force A4 for optimal layout with 4 cards per page
     page_size = A4
@@ -372,8 +508,11 @@ def create_cards_pdf(job_id: str,
     
     # Calculate card dimensions for 2x2 grid with margins
     margin = 20
-    card_width = (page_width - (3 * margin)) / 2
-    card_height = (page_height - (3 * margin)) / 2
+    
+    # Important: Make card dimensions square to prevent oval distortion
+    card_size = min((page_width - (3 * margin)) / 2, (page_height - (3 * margin)) / 2)
+    card_width = card_size
+    card_height = card_size
     
     # Card render size in pixels (for high quality)
     card_pixels = (1000, 1000)
@@ -387,13 +526,16 @@ def create_cards_pdf(job_id: str,
     # Create a new PDF
     c = canvas.Canvas(output_file, pagesize=page_size)
     
-    # 2x2 grid positions
+    # Calculate positions for centered square cards in a 2x2 grid
+    h_margin = (page_width - (2 * card_width)) / 3
+    v_margin = (page_height - (2 * card_height)) / 3
+    
     positions = [
         # x, y coordinates (ReportLab's origin is bottom-left)
-        (margin, page_height - margin - card_height),                    # Top left
-        (margin + card_width + margin/2, page_height - margin - card_height),  # Top right
-        (margin, margin),                                               # Bottom left
-        (margin + card_width + margin/2, margin)                         # Bottom right
+        (h_margin, page_height - v_margin - card_height),              # Top left
+        (2*h_margin + card_width, page_height - v_margin - card_height), # Top right
+        (h_margin, v_margin),                                          # Bottom left
+        (2*h_margin + card_width, v_margin)                            # Bottom right
     ]
     
     # Generate each page
@@ -419,8 +561,8 @@ def create_cards_pdf(job_id: str,
             card_file = os.path.join(output_dir, f"{job_id}_card_{page}_{i}.png")
             card_img.save(card_file, format='PNG')
             
-            # Add the card to the PDF
-            c.drawImage(card_file, x, y, width=card_width, height=card_height)
+            # Add the card to the PDF - use same width and height to keep aspect ratio
+            c.drawImage(card_file, x, y, width=card_width, height=card_height, preserveAspectRatio=True)
             
             # Add a small card number for reference
             c.setFont("Helvetica", 8)
@@ -436,7 +578,6 @@ def create_cards_pdf(job_id: str,
     c.save()
     
     return output_file
-
 
 def generate_cards(job_id: str,
                    cards: List[List[int]],
